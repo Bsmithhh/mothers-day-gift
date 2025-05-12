@@ -1,25 +1,39 @@
-import React from 'react';
 import { supabase } from '@/lib/supabase';
-import EditForm from '../../components/EditForm';
+import { redirect } from 'next/navigation';
+import EditForm from '@/app/components/EditForm';
+import { Recipe } from '@/app/types';
 
-async function getRecipe(id: string) {
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default async function EditPage({ params }: PageProps) {
   const { data: recipe, error } = await supabase
     .from('recipes')
     .select('*')
-    .eq('id', id)
+    .eq('id', params.id)
     .single();
 
-  if (error) {
-    console.error('Error fetching recipe:', error);
-    return null;
+  if (error || !recipe) {
+    redirect('/');
   }
 
-  return recipe;
-}
+  // Transform the recipe data to match our Recipe type
+  const transformedRecipe: Recipe = {
+    id: recipe.id,
+    title: recipe.title,
+    description: recipe.description,
+    ingredients: recipe.ingredients,
+    instructions: recipe.instructions,
+    prepTime: recipe.prep_time,
+    cookTime: recipe.cook_time,
+    servings: recipe.servings,
+    notes: recipe.notes,
+    category: recipe.category,
+    isFavorite: recipe.is_favorite
+  };
 
-export default async function EditRecipePage({ params }: { params: { id: string } }) {
-  const recipe = await getRecipe(params.id);
-  if (!recipe) return <div>Recipe not found</div>;
-
-  return <EditForm recipe={recipe} />;
+  return <EditForm recipe={transformedRecipe} />;
 } 
